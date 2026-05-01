@@ -332,22 +332,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (error) {
-                    alert(error.message || "Authentication failed");
+                    alert("Auth Error: " + error.message);
                 } else {
-                    const user = data.user || data;
-                    if (user) {
-                        currentUser.id = user.id;
-                        currentUser.email = user.email || email;
-                        currentUser.name = user.user_metadata?.full_name || email.split('@')[0];
-                        currentUser.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=random`;
-                        localStorage.setItem('unibuzz_session', JSON.stringify(currentUser));
-                    }
-                    
-                    await syncUserProfile();
+                    if (isSignUpMode && data.user && data.session === null) {
+                        alert("Account created! 📧 Please check your email inbox (and spam folder) to confirm your account before logging in.");
+                        isSignUpMode = false;
+                        // Manual UI Update to Login mode
+                        authSubtitle.textContent = "Chat, Connect and Find what's yours!";
+                        nameGroup.classList.add('hidden');
+                        phoneGroup.classList.add('hidden');
+                        authSubmitBtn.textContent = 'Log In';
+                        authToggleText.textContent = "Don't have an account?";
+                        authToggleBtn.textContent = "Sign Up";
+                    } else {
+                        const user = data.user || data;
+                        if (user) {
+                            currentUser.id = user.id;
+                            currentUser.email = user.email || email;
+                            currentUser.name = user.user_metadata?.full_name || email.split('@')[0];
+                            currentUser.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=random`;
+                            localStorage.setItem('unibuzz_session', JSON.stringify(currentUser));
+                        }
+                        
+                        await syncUserProfile();
 
-                    loginScreen.classList.add('hidden');
-                    appScreen.classList.remove('hidden');
-                    initApp();
+                        loginScreen.classList.add('hidden');
+                        appScreen.classList.remove('hidden');
+                        initApp();
+                    }
                 }
             } catch (err) {
                  alert("Authentication error: " + err.message);
