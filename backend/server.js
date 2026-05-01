@@ -20,6 +20,7 @@ app.use(express.static(path.join(__dirname, 'frontend')));
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     try {
+        console.log(`[AUTH] Login attempt for: ${email}`);
         const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
             method: 'POST',
             headers: {
@@ -29,9 +30,14 @@ app.post('/api/login', async (req, res) => {
             body: JSON.stringify({ email, password })
         });
         const data = await response.json();
-        if (!response.ok) return res.status(400).json({ error: data.error_description || data.msg || 'Login failed' });
+        if (!response.ok) {
+            console.error(`[AUTH] Login failed for ${email}:`, data.error_description || data.msg);
+            return res.status(response.status).json({ error: data.error_description || data.msg || 'Login failed' });
+        }
+        console.log(`[AUTH] Login successful for: ${email}`);
         res.status(200).json({ user: data.user, session: data });
     } catch (err) {
+        console.error(`[AUTH] Login exception:`, err.message);
         res.status(500).json({ error: err.message });
     }
 });
@@ -39,6 +45,7 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/signup', async (req, res) => {
     const { email, password, fullName } = req.body;
     try {
+        console.log(`[AUTH] Signup attempt for: ${email}`);
         const response = await fetch(`${supabaseUrl}/auth/v1/signup`, {
             method: 'POST',
             headers: {
@@ -48,9 +55,15 @@ app.post('/api/signup', async (req, res) => {
             body: JSON.stringify({ email, password, data: { full_name: fullName } })
         });
         const data = await response.json();
-        if (!response.ok) return res.status(400).json({ error: data.message || 'Signup failed' });
-        res.status(200).json({ user: data });
+        if (!response.ok) {
+            console.error(`[AUTH] Signup failed for ${email}:`, data.message || data.msg);
+            return res.status(response.status).json({ error: data.message || data.msg || 'Signup failed' });
+        }
+        console.log(`[AUTH] Signup successful for: ${email}`);
+        // Return session if available (it might be null if email confirmation is enabled)
+        res.status(200).json({ user: data.user || data, session: data.session || null, fullName });
     } catch (err) {
+        console.error(`[AUTH] Signup exception:`, err.message);
         res.status(500).json({ error: err.message });
     }
 });

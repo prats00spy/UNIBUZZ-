@@ -1,0 +1,6 @@
+{
+  "appId": "com.unibuzz.app",
+  "appName": "UNIBUZZ",
+  "webDir": "backend/frontend",
+  "bundledWebRuntime": false
+}

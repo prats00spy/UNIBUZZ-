@@ -35,6 +35,27 @@
     --transition-smooth: 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+@keyframes animate-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.animate-spin {
+    animation: animate-spin 1s linear infinite;
+    display: inline-block;
+}
+
+/* White Input Area */
+#message-input {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+    font-weight: 500 !important;
+    font-size: 16px !important; /* Prevent iOS zoom */
+}
+#message-input::placeholder {
+    color: #666666 !important;
+}
+
 /* --- THEME VARIATIONS --- */
 
 [data-theme="emerald"] {
@@ -895,6 +916,7 @@ textarea:focus {
     flex-direction: column;
     gap: 1.25rem;
     background: var(--bg-main);
+    padding-bottom: 20px !important; /* Extra space at bottom */
 }
 
 .message-wrapper {
@@ -978,13 +1000,11 @@ textarea:focus {
 }
 
 .chat-input-area {
-    height: 85px;
-    padding: 0 1.5rem;
     background: var(--bg-panel);
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    padding: 15px 20px;
+    padding-bottom: calc(15px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
 }
 
 .message-input-wrapper {
@@ -1166,37 +1186,37 @@ textarea:focus {
 /* --- RESPONSIVENESS (Mobile Support) --- */
 @media (max-width: 768px) {
     body {
+        height: 100vh;
         height: 100dvh;
         overflow: hidden;
+        position: fixed; 
+        width: 100%;
+        overscroll-behavior-y: none;
     }
 
     .app-layout {
         width: 100vw;
+        height: 100vh;
         height: 100dvh;
         border-radius: 0;
         flex-direction: column;
         margin: 0;
         display: flex;
+        overflow: hidden;
     }
 
     .main-nav {
         width: 100%;
-        height: calc(70px + env(safe-area-inset-bottom));
+        height: calc(65px + env(safe-area-inset-bottom));
         flex-direction: row;
-        justify-content: flex-start; /* Enable swiping icons */
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: 0 15px env(safe-area-inset-bottom);
+        justify-content: space-around;
+        padding: 0 10px env(safe-area-inset-bottom);
         order: 2; /* Bottom */
         border-right: none;
         border-top: 1px solid var(--border-color);
         background: var(--bg-panel);
-        -webkit-overflow-scrolling: touch;
-        gap: 15px;
-    }
-
-    .main-nav::-webkit-scrollbar {
-        display: none; /* Hide scrollbar for clean look */
+        z-index: 1000;
+        flex-shrink: 0;
     }
 
     .nav-top, .nav-bottom {
@@ -1205,14 +1225,19 @@ textarea:focus {
         height: 100%;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 5px;
+        justify-content: space-around;
+        flex: 1;
     }
 
     .nav-item {
-        width: 60px;
+        flex: 1;
         height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.4rem;
         border-bottom: none;
-        font-size: 1.6rem;
     }
 
     .nav-separator {
@@ -1223,14 +1248,36 @@ textarea:focus {
         width: 100% !important;
         flex: 1;
         display: flex !important;
+        flex-direction: column;
         border-right: none;
+        overflow: hidden; /* Children will scroll */
+        height: 0; /* Let flex-grow handle it */
     }
 
     .main-view {
         width: 100% !important;
         flex: 1;
-        display: none !important; /* Hidden by default on mobile */
+        display: none !important; 
         background: var(--bg-main);
+        overflow: hidden;
+        height: 100%; /* Take full available space */
+    }
+
+    #chat-view {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .messages-area {
+        flex: 1;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding: 1.5rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
     }
 
     /* State management */
@@ -1249,6 +1296,9 @@ textarea:focus {
 
     .mobile-back-btn {
         display: flex !important;
+        padding: 12px !important;
+        margin-right: 5px !important;
+        font-size: 1.6rem !important;
     }
 
     .premium-title {
@@ -1264,12 +1314,36 @@ textarea:focus {
     }
 
     .chat-input-area {
-        padding: 12px;
+        padding: 12px 16px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
         background: var(--bg-panel);
         border-top: 1px solid var(--border-color);
-        position: sticky;
-        bottom: 0;
+        position: relative;
         z-index: 100;
+    }
+
+    .group-info-sidebar {
+        width: 100% !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2000;
+        background: var(--bg-main);
+    }
+
+    .lists-container {
+        height: 100%;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .messages-area {
+        flex: 1;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding: 1rem;
     }
 
     /* Fix for iOS zoom and keyboard */
@@ -1559,3 +1633,28 @@ textarea:focus {
     justify-content: center;
     align-items: center;
 }
+ @ k e y f r a m e s   a n i m a t e - s p i n   { 
+         f r o m   {   t r a n s f o r m :   r o t a t e ( 0 d e g ) ;   } 
+         t o   {   t r a n s f o r m :   r o t a t e ( 3 6 0 d e g ) ;   } 
+ } 
+ . a n i m a t e - s p i n   { 
+         a n i m a t i o n :   a n i m a t e - s p i n   1 s   l i n e a r   i n f i n i t e ; 
+         d i s p l a y :   i n l i n e - b l o c k ; 
+ }  
+ 
+ / *   W h i t e   I n p u t   A r e a   * / 
+ # m e s s a g e - i n p u t   { 
+         b a c k g r o u n d :   # f f f f f f   ! i m p o r t a n t ; 
+         c o l o r :   # 0 0 0 0 0 0   ! i m p o r t a n t ; 
+         b o r d e r :   1 p x   s o l i d   r g b a ( 0 , 0 , 0 , 0 . 1 )   ! i m p o r t a n t ; 
+         f o n t - w e i g h t :   5 0 0   ! i m p o r t a n t ; 
+ } 
+ # m e s s a g e - i n p u t : : p l a c e h o l d e r   { 
+         c o l o r :   # 6 6 6 6 6 6   ! i m p o r t a n t ; 
+ } 
+ . c h a t - i n p u t - a r e a   { 
+         b a c k g r o u n d :   v a r ( - - b g - p a n e l ) ; 
+         p a d d i n g :   1 5 p x   2 0 p x ; 
+         b o r d e r - t o p :   1 p x   s o l i d   v a r ( - - b o r d e r - c o l o r ) ; 
+ }  
+ 

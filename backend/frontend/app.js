@@ -1,5 +1,5 @@
 // Mock Database (Now Dynamic)
-const BACKEND_URL = 'http://localhost:3000';
+// BACKEND_URL is now dynamic and set inside the DOMContentLoaded listener or when needed.
 let currentUser = {
     id: '',
     name: '',
@@ -305,6 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+        const BACKEND_URL = window.location.origin;
 
         loginForm?.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -320,30 +321,26 @@ document.addEventListener('DOMContentLoaded', () => {
             authSubmitBtn.disabled = true;
 
             try {
-                if (!window.supabaseClient) throw new Error("Supabase is not initialized!");
-                
-                let data, error;
-                if (isSignUpMode) {
-                    const res = await window.supabaseClient.auth.signUp({
-                        email,
-                        password,
-                        options: { data: { full_name: authNameInput.value.trim() } }
-                    });
-                    data = res.data;
-                    error = res.error;
-                } else {
-                    const res = await window.supabaseClient.auth.signInWithPassword({
-                        email,
-                        password
-                    });
-                    data = res.data;
-                    error = res.error;
-                }
+                // Try backend API first for better logging and Vercel compatibility
+                const endpoint = isSignUpMode ? '/api/signup' : '/api/login';
+                const body = isSignUpMode ? 
+                    { email, password, fullName: authNameInput.value.trim() } : 
+                    { email, password };
 
-                if (error) {
-                    alert("Auth Error: " + error.message);
-                } else {
-                    if (isSignUpMode && data.user && data.session === null) {
+                console.log(`Attempting ${isSignUpMode ? 'Sign Up' : 'Login'} via ${BACKEND_URL}${endpoint}...`);
+
+                const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const { user, session } = result;
+                    
+                    if (isSignUpMode && !session) {
                         alert("Account created! 📧 Please check your email inbox (and spam folder) to confirm your account before logging in.");
                         isSignUpMode = false;
                         // Manual UI Update to Login mode
@@ -354,6 +351,47 @@ document.addEventListener('DOMContentLoaded', () => {
                         authToggleTexts.forEach(t => t.textContent = "Don't have an account?");
                         authToggleBtns.forEach(b => b.textContent = "Sign Up");
                     } else {
+                        if (user) {
+                            currentUser.id = user.id;
+                            currentUser.email = user.email || email;
+                            currentUser.name = user.user_metadata?.full_name || result.fullName || email.split('@')[0];
+                            currentUser.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=random`;
+                            localStorage.setItem('unibuzz_session', JSON.stringify(currentUser));
+                        }
+                        
+                        await syncUserProfile();
+                        loginScreen.classList.add('hidden');
+                        appScreen.classList.remove('hidden');
+                        initApp();
+                    }
+                } else {
+                    // Fallback to direct Supabase if backend fails or is not available
+                    console.warn("Backend auth failed, falling back to direct Supabase...", result.error);
+                    
+                    if (!window.supabaseClient) throw new Error("Supabase is not initialized!");
+                    
+                    let data, error;
+                    if (isSignUpMode) {
+                        const res = await window.supabaseClient.auth.signUp({
+                            email,
+                            password,
+                            options: { data: { full_name: authNameInput.value.trim() } }
+                        });
+                        data = res.data;
+                        error = res.error;
+                    } else {
+                        const res = await window.supabaseClient.auth.signInWithPassword({
+                            email,
+                            password
+                        });
+                        data = res.data;
+                        error = res.error;
+                    }
+
+                    if (error) {
+                        throw error;
+                    } else {
+                        // Success via Supabase Direct
                         const user = data.user || data;
                         if (user) {
                             currentUser.id = user.id;
@@ -362,16 +400,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             currentUser.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=random`;
                             localStorage.setItem('unibuzz_session', JSON.stringify(currentUser));
                         }
-                        
                         await syncUserProfile();
-
                         loginScreen.classList.add('hidden');
                         appScreen.classList.remove('hidden');
                         initApp();
                     }
                 }
             } catch (err) {
-                 alert("Authentication error: " + err.message);
+                 console.error("Auth Error Details:", err);
+                 alert("Authentication Error: " + (err.message || "Unknown error occurred. Check console for details."));
             }
             authSubmitBtn.disabled = false;
         });
@@ -432,14 +469,28 @@ document.addEventListener('DOMContentLoaded', () => {
         // Mobile Back Buttons
         document.getElementById('chat-back-btn')?.addEventListener('click', () => {
             document.querySelector('.app-layout').classList.remove('viewing-chat');
+            // Also hide sidebars if they were open on mobile
+            groupInfoSidebar.classList.add('hidden');
+            profileSidebar.classList.add('hidden');
         });
         document.getElementById('lf-back-btn')?.addEventListener('click', () => {
             document.querySelector('.app-layout').classList.remove('viewing-chat');
+            // Ensure no detail view is stuck
+            activeLFId = null;
+            renderLFList(); 
         });
 
         // Navigation Tabs (Listeners only)
         document.querySelectorAll('.nav-top .nav-item[data-tab]').forEach(item => {
             item.addEventListener('click', () => switchTab(item.getAttribute('data-tab')));
+        });
+
+        // Sidebar Close Buttons
+        document.getElementById('close-info-btn')?.addEventListener('click', () => {
+            groupInfoSidebar.classList.add('hidden');
+        });
+        document.getElementById('close-profile-btn')?.addEventListener('click', () => {
+            profileSidebar.classList.add('hidden');
         });
 
         // Settings Nav
@@ -889,9 +940,9 @@ function initRealtime() {
                         timestamp: new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     });
                     // Re-render only if the sidebar is relevant
-                    renderChatsList();
-                    renderGroupsList();
-                    renderCommunitiesList();
+                    if (currentTab === 'chats') renderChatsList();
+                    else if (currentTab === 'groups') renderGroupsList();
+                    else if (currentTab === 'communities') renderCommunitiesList();
                 }
             }
         })
@@ -917,8 +968,59 @@ async function fetchListings() {
                 });
             });
         }
+        // Mobile Keyboard Handling
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => {
+                if (activeChatId) {
+                    scrollToBottom();
+                    // Scroll body to top to ensure layout doesn't shift
+                    window.scrollTo(0, 0);
+                }
+            });
+        }
+
+        // Auto-reconnect/sync logic
+        if (window.supabaseClient) {
+            window.supabaseClient.auth.onAuthStateChange((event, session) => {
+                console.log("Supabase Auth Event:", event);
+                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                    initRealtime();
+                }
+            });
+            
+            // Periodic sync every 30s to catch missed messages
+            setInterval(() => {
+                if (activeChatId) {
+                    const chat = [...chatsData, ...groupsData, ...communitiesData].find(c => c.id === activeChatId);
+                    if (chat) refreshChatMessages(chat);
+                }
+            }, 30000);
+        }
     } catch (e) {
-        console.error("Fetch listings failed:", e);
+        console.error("Initialization failed:", e);
+    }
+}
+
+async function refreshChatMessages(chat) {
+    if (!window.supabaseClient || !activeChatId) return;
+    const { data, error } = await window.supabaseClient
+        .from('messages')
+        .select('*')
+        .eq('chat_id', chat.id)
+        .order('created_at', { ascending: true });
+
+    if (!error && data) {
+        const newMessages = data.map(row => ({
+            id: row.id,
+            senderId: row.sender_id,
+            text: row.text,
+            timestamp: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }));
+        
+        if (JSON.stringify(newMessages) !== JSON.stringify(chat.messages)) {
+            chat.messages = newMessages;
+            renderMessages(chat);
+        }
     }
 }
 
@@ -1242,9 +1344,14 @@ async function openChat(chat, listItemUi) {
 
     // Fetch from Supabase
     if (window.supabaseClient) {
-        messagesContainer.innerHTML = '<div class="text-center text-dimmed mt-4">Loading messages...</div>';
+        // If we already have messages, show them instantly first
+        if (chat.messages && chat.messages.length > 0) {
+            renderMessages(chat);
+        } else {
+            messagesContainer.innerHTML = '<div class="text-center text-dimmed mt-10"><i class="ph ph-circle-notch animate-spin text-2xl"></i><br>Loading your buzzes...</div>';
+        }
 
-        // 1. Fetch existing
+        // 1. Fetch latest (only if needed or always to be sure)
         const { data, error } = await window.supabaseClient
             .from('messages')
             .select('*')
@@ -1252,15 +1359,19 @@ async function openChat(chat, listItemUi) {
             .order('created_at', { ascending: true });
 
         if (!error && data) {
-            chat.messages = data.map(row => ({
+            const newMessages = data.map(row => ({
                 id: row.id,
                 senderId: row.sender_id,
                 text: row.text,
                 timestamp: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }));
+            
+            // Only re-render if data actually changed to avoid flickers
+            if (JSON.stringify(newMessages) !== JSON.stringify(chat.messages)) {
+                chat.messages = newMessages;
+                renderMessages(chat);
+            }
         }
-
-        renderMessages(chat);
 
         // 2. Real-time Subscription
         if (currentSupabaseSubscription) {
@@ -1273,16 +1384,23 @@ async function openChat(chat, listItemUi) {
                 const newRow = payload.new;
                 // Add message directly when it streams in
                 if (!chat.messages.find(m => m.id === newRow.id)) {
-                    chat.messages.push({
+                    const newMsg = {
                         id: newRow.id,
                         senderId: newRow.sender_id,
                         text: newRow.text,
                         timestamp: new Date(newRow.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    });
-                    renderMessages(chat);
+                    };
+                    chat.messages.push(newMsg);
+                    // APPEND instead of full re-render
+                    appendMessage(newMsg, chat);
                 }
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log(`Sub status for ${activeChatId}:`, status);
+                if (status === 'SUBSCRIBED') {
+                    // Maybe show a green dot for connection?
+                }
+            });
 
     } else {
         renderMessages(chat); // Mock fallback
@@ -1292,53 +1410,68 @@ async function openChat(chat, listItemUi) {
 function renderMessages(chat) {
     messagesContainer.innerHTML = '';
 
-    // Encryption Banner (WhatsApp Style)
+    // Encryption Banner
     const encryptionMsg = document.createElement('div');
     encryptionMsg.className = 'encryption-lock';
     encryptionMsg.innerHTML = '<i class="ph ph-lock-key"></i> Messages are end-to-end encrypted. No one outside of this chat can read them.';
     messagesContainer.appendChild(encryptionMsg);
 
     if (!chat.messages || chat.messages.length === 0) {
-        messagesContainer.innerHTML += '<div class="text-center text-dimmed mt-8">No vibes here yet. Send a message! 🚀</div>';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'text-center text-dimmed mt-8';
+        emptyDiv.innerHTML = '<i class="ph ph-chat-circle-dots text-3xl opacity-20 mb-2"></i><br>No vibes here yet. Send a message! 🚀';
+        messagesContainer.appendChild(emptyDiv);
         return;
     }
 
     chat.messages.forEach(msg => {
-        const isSentByMe = msg.senderId === currentUser.id;
-        const isSystem = msg.senderId === 'system';
-        const senderName = getDisplayName(msg.senderId);
-        const senderAvatar = isSystem ? '' : (isSentByMe ? currentUser.avatar : (users[msg.senderId]?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=random`));
-
-        if (isSystem) {
-            const sysBox = document.createElement('div');
-            sysBox.style.cssText = 'padding: 6px 16px; background: rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.8rem; border-radius: 12px; align-self: center; margin: 8px 0; font-weight: 600; text-align: center; border: 1px solid var(--border-color);';
-            sysBox.textContent = msg.text;
-            messagesContainer.appendChild(sysBox);
-            return;
-        }
-
-        const wrapper = document.createElement('div');
-        wrapper.className = `message-wrapper ${isSentByMe ? 'sent' : 'received'}`;
-
-        let msgHtml = `
-            <div class="message-bubble ${msg.isAnnouncement ? 'announcement-vibe' : ''} ${msg.starred ? 'starred' : ''}">
-                ${msg.isAnnouncement ? `<div class="badge-announcement text-xs mb-1"><i class="ph ph-megaphone-simple"></i> ANNOUNCEMENT</div>` : ''}
-                ${(chat.type === 'group' || chat.type === 'community') && !isSentByMe ? `<span class="message-sender">${senderName}</span>` : ''}
-                ${msg.image ? `<img src="${msg.image}" style="width:100%; max-width:250px; border-radius:12px; margin-bottom:8px;">` : ''}
-                <div class="message-text">
-                    ${msg.text.replace(/(^|\s)@(\w+(?:\s\w+)?)/g, '$1<span class="mention" style="color:var(--accent-primary); font-weight:700; cursor:pointer;">@$2</span>')}
-                </div>
-                <div class="message-time">
-                    ${msg.timestamp}
-                    ${msg.starred ? '<i class="ph-fill ph-star" style="color:var(--warning); margin-left:4px;"></i>' : ''}
-                </div>
-            </div>
-        `;
-        wrapper.innerHTML = msgHtml;
-        messagesContainer.appendChild(wrapper);
+        appendMessage(msg, chat, false); // Don't scroll yet
     });
 
     scrollToBottom();
+}
+
+function appendMessage(msg, chat, shouldScroll = true) {
+    // Prevent duplicate DOM elements if it already exists
+    if (document.getElementById(`msg-${msg.id}`)) return;
+
+    const isSentByMe = msg.senderId === currentUser.id;
+    const isSystem = msg.senderId === 'system';
+    const senderName = getDisplayName(msg.senderId);
+    
+    if (isSystem) {
+        const sysBox = document.createElement('div');
+        sysBox.id = `msg-${msg.id || Math.random()}`;
+        sysBox.style.cssText = 'padding: 6px 16px; background: rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.8rem; border-radius: 12px; align-self: center; margin: 8px 0; font-weight: 600; text-align: center; border: 1px solid var(--border-color); width: fit-content;';
+        sysBox.textContent = msg.text;
+        messagesContainer.appendChild(sysBox);
+        if (shouldScroll) scrollToBottom();
+        return;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.id = `msg-${msg.id}`;
+    wrapper.className = `message-wrapper ${isSentByMe ? 'sent' : 'received'} ${msg.isOptimistic ? 'pending' : ''}`;
+
+    let msgHtml = `
+        <div class="message-bubble ${msg.isAnnouncement ? 'announcement-vibe' : ''} ${msg.starred ? 'starred' : ''}" 
+             style="${msg.isOptimistic ? 'opacity: 0.7;' : ''}">
+            ${msg.isAnnouncement ? `<div class="badge-announcement text-xs mb-1"><i class="ph ph-megaphone-simple"></i> ANNOUNCEMENT</div>` : ''}
+            ${(chat.type === 'group' || chat.type === 'community') && !isSentByMe ? `<span class="message-sender">${senderName}</span>` : ''}
+            ${msg.image ? `<img src="${msg.image}" style="width:100%; max-width:250px; border-radius:12px; margin-bottom:8px;">` : ''}
+            <div class="message-text">
+                ${msg.text.replace(/(^|\s)@(\w+(?:\s\w+)?)/g, '$1<span class="mention" style="color:var(--accent-primary); font-weight:700; cursor:pointer;">@$2</span>')}
+            </div>
+            <div class="message-time">
+                ${msg.timestamp}
+                ${msg.isOptimistic ? '<i class="ph ph-circle-notch animate-spin" style="margin-left:4px; font-size: 10px;"></i>' : (msg.starred ? '<i class="ph-fill ph-star" style="color:var(--warning); margin-left:4px;"></i>' : '')}
+            </div>
+        </div>
+    `;
+    wrapper.innerHTML = msgHtml;
+    messagesContainer.appendChild(wrapper);
+
+    if (shouldScroll) scrollToBottom();
 }
 
 // --- Chat Management Actions ---
@@ -1444,46 +1577,69 @@ async function sendMessage() {
     const text = messageInput.value.trim();
     if (!text || !activeChatId) return;
 
+    const list = [...chatsData, ...groupsData, ...communitiesData];
+    const chat = list.find(c => c.id === activeChatId);
+    if (!chat) return;
+
+    // --- OPTIMISTIC UPDATE ---
+    const tempId = 'temp_' + Date.now();
+    const optimisticMsg = {
+        id: tempId,
+        senderId: currentUser.id,
+        text: text,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isOptimistic: true // To identify it's not yet confirmed
+    };
+
+    if (!chat.messages) chat.messages = [];
+    chat.messages.push(optimisticMsg);
+    
+    // Clear input and render immediately
+    messageInput.value = '';
+    localStorage.removeItem(`draft_${activeChatId}`);
+    renderMessages(chat);
+    scrollToBottom();
+    
+    // Force focus back to input for mobile keyboard persistence
+    messageInput.focus();
+    
+    // Update sidebar snippet instantly
+    if (currentTab === 'chats') renderChatsList();
+    else if (currentTab === 'groups') renderGroupsList();
+    else if (currentTab === 'communities') renderCommunitiesList();
+
     if (window.supabaseClient) {
-        // Insert into Supabase Table
         const payload = {
             chat_id: activeChatId,
             sender_id: currentUser.id,
             text: text
         };
 
-        const { data, error } = await window.supabaseClient.from('messages').insert([payload]);
+        const { data, error } = await window.supabaseClient.from('messages').insert([payload]).select();
 
         if (error) {
             console.error("Error sending message:", error);
-            alert("Failed to send message: " + error.message);
-        } else {
-            messageInput.value = '';
-            localStorage.removeItem(`draft_${activeChatId}`);
-            // Local fallback scroll/render (Subscription will handle the actual UI update)
-            scrollToBottom();
+            // Remove optimistic message on error
+            chat.messages = chat.messages.filter(m => m.id !== tempId);
+            renderMessages(chat);
+            alert("Failed to send: " + error.message);
+        } else if (data && data[0]) {
+            // Replace optimistic message with real one from DB (to get real ID/timestamp)
+            const realMsg = {
+                id: data[0].id,
+                senderId: data[0].sender_id,
+                text: data[0].text,
+                timestamp: new Date(data[0].created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            const idx = chat.messages.findIndex(m => m.id === tempId);
+            if (idx !== -1) chat.messages[idx] = realMsg;
+            renderMessages(chat);
         }
     } else {
-        // Fallback mock logic
-        const chatItems = currentTab === 'chats' ? chatsData : (currentTab === 'groups' ? groupsData : communitiesData);
-        const chat = chatItems.find(c => c.id === activeChatId);
-
-        if (chat) {
-            const newMsg = {
-                id: 'm' + Date.now(),
-                senderId: currentUser.id,
-                text: text,
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            };
-            chat.messages.push(newMsg);
-            renderMessages(chat);
-            messageInput.value = '';
-            localStorage.removeItem(`draft_${activeChatId}`);
-            scrollToBottom();
-            if (currentTab === 'chats') renderChatsList();
-            else if (currentTab === 'groups') renderGroupsList();
-            else renderCommunitiesList();
-        }
+        // Mock logic already handled by optimistic update, just finalize it
+        const idx = chat.messages.findIndex(m => m.id === tempId);
+        if (idx !== -1) chat.messages[idx].isOptimistic = false;
+        renderMessages(chat);
     }
 }
 
