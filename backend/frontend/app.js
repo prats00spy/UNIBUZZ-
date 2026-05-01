@@ -328,26 +328,32 @@ document.addEventListener('DOMContentLoaded', () => {
             authSubmitBtn.disabled = true;
 
             try {
-                // Try backend API first for better logging and Vercel compatibility
-                const endpoint = isSignUpMode ? '/api/signup' : '/api/login';
-                const body = isSignUpMode ? 
-                    { email, password, fullName: authNameInput.value.trim() } : 
-                    { email, password };
+                if (!window.supabaseClient) throw new Error("Supabase is not initialized!");
+                
+                let data, error;
+                if (isSignUpMode) {
+                    console.log(`Attempting Direct Sign Up for: ${email}...`);
+                    const res = await window.supabaseClient.auth.signUp({
+                        email,
+                        password,
+                        options: { data: { full_name: authNameInput.value.trim() } }
+                    });
+                    data = res.data;
+                    error = res.error;
+                } else {
+                    console.log(`Attempting Direct Login for: ${email}...`);
+                    const res = await window.supabaseClient.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+                    data = res.data;
+                    error = res.error;
+                }
 
-                console.log(`Attempting ${isSignUpMode ? 'Sign Up' : 'Login'} via ${BACKEND_URL}${endpoint}...`);
-
-                const response = await fetch(`${BACKEND_URL}${endpoint}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    const { user, session } = result;
-                    
-                    if (isSignUpMode && !session) {
+                if (error) {
+                    throw error;
+                } else {
+                    if (isSignUpMode && data.user && data.session === null) {
                         alert("Account created! 📧 Please check your email inbox (and spam folder) to confirm your account before logging in.");
                         isSignUpMode = false;
                         // Manual UI Update to Login mode
@@ -358,57 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         authToggleTexts.forEach(t => t.textContent = "Don't have an account?");
                         authToggleBtns.forEach(b => b.textContent = "Sign Up");
                     } else {
-                    if (session) {
-                        if (window.supabaseClient) {
-                            await window.supabaseClient.auth.setSession({
-                                access_token: session.access_token,
-                                refresh_token: session.refresh_token
-                            });
-                        }
-                        
-                        if (user) {
-                            currentUser.id = user.id;
-                            currentUser.email = user.email || email;
-                            currentUser.name = user.user_metadata?.full_name || result.fullName || email.split('@')[0];
-                            currentUser.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=random`;
-                            localStorage.setItem('unibuzz_session', JSON.stringify(currentUser));
-                            localStorage.setItem('last_user', JSON.stringify({ name: currentUser.name, avatar: currentUser.avatar, email: currentUser.email }));
-                        }
-                        
-                        await syncUserProfile();
-                        loginScreen.classList.add('hidden');
-                        appScreen.classList.remove('hidden');
-                        initApp();
-                    }
-                    }
-                } else {
-                    // Fallback to direct Supabase if backend fails or is not available
-                    console.warn("Backend auth failed, falling back to direct Supabase...", result.error);
-                    
-                    if (!window.supabaseClient) throw new Error("Supabase is not initialized!");
-                    
-                    let data, error;
-                    if (isSignUpMode) {
-                        const res = await window.supabaseClient.auth.signUp({
-                            email,
-                            password,
-                            options: { data: { full_name: authNameInput.value.trim() } }
-                        });
-                        data = res.data;
-                        error = res.error;
-                    } else {
-                        const res = await window.supabaseClient.auth.signInWithPassword({
-                            email,
-                            password
-                        });
-                        data = res.data;
-                        error = res.error;
-                    }
-
-                    if (error) {
-                        throw error;
-                    } else {
-                        // Success via Supabase Direct
                         const user = data.user || data;
                         if (user) {
                             currentUser.id = user.id;
@@ -416,16 +371,19 @@ document.addEventListener('DOMContentLoaded', () => {
                             currentUser.name = user.user_metadata?.full_name || email.split('@')[0];
                             currentUser.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=random`;
                             localStorage.setItem('unibuzz_session', JSON.stringify(currentUser));
+                            localStorage.setItem('last_user', JSON.stringify({ name: currentUser.name, avatar: currentUser.avatar, email: currentUser.email }));
                         }
+                        
                         await syncUserProfile();
+
                         loginScreen.classList.add('hidden');
                         appScreen.classList.remove('hidden');
                         initApp();
                     }
                 }
             } catch (err) {
-                 console.error("Auth Error Details:", err);
-                 alert("Authentication Error: " + (err.message || "Unknown error occurred. Check console for details."));
+                 alert("Authentication Error: " + err.message);
+                 console.error("Auth Failure:", err);
             }
             authSubmitBtn.disabled = false;
         });

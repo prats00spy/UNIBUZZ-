@@ -1,0 +1,18 @@
+{
+  "name": "unibuzz",
+  "version": "1.0.0",
+  "description": "UNIBUZZ Mobile App",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "cap:sync": "npx cap sync",
+    "cap:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/cli": "^5.0.0",
+    "@capacitor/core": "^5.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}
