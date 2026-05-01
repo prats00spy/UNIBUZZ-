@@ -244,8 +244,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
         const authSubmitBtn = document.getElementById('auth-submit-btn');
-        const authToggleText = document.getElementById('auth-toggle-text');
-        const authToggleBtn = document.getElementById('auth-toggle-btn');
+        const authToggleTexts = document.querySelectorAll('.auth-toggle-text');
+        const authToggleBtns = document.querySelectorAll('.auth-toggle-btn');
 
         showLoginBtn?.addEventListener('click', () => {
             if (loginDashboard) loginDashboard.classList.add('hidden');
@@ -279,29 +279,31 @@ document.addEventListener('DOMContentLoaded', () => {
             finalizeAuth();
         });
 
-        authToggleBtn?.addEventListener('click', (e) => {
-            e.preventDefault();
-            isSignUpMode = !isSignUpMode;
+        authToggleBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                isSignUpMode = !isSignUpMode;
 
-            // Ensure form is visible if coming from dashboard
-            if (loginDashboard) loginDashboard.classList.add('hidden');
-            loginForm.classList.remove('hidden');
+                // Ensure form is visible if coming from dashboard
+                if (loginDashboard) loginDashboard.classList.add('hidden');
+                loginForm.classList.remove('hidden');
 
-            if (isSignUpMode) {
-                authSubtitle.textContent = "Create a new account to join!";
-                nameGroup.classList.remove('hidden');
-                phoneGroup.classList.remove('hidden');
-                authSubmitBtn.textContent = 'Sign Up';
-                authToggleText.textContent = "Already have an account?";
-                authToggleBtn.textContent = "Log In";
-            } else {
-                authSubtitle.textContent = "Chat, Connect and Find what's yours!";
-                nameGroup.classList.add('hidden');
-                phoneGroup.classList.add('hidden');
-                authSubmitBtn.textContent = 'Log In';
-                authToggleText.textContent = "Don't have an account?";
-                authToggleBtn.textContent = "Sign Up";
-            }
+                if (isSignUpMode) {
+                    authSubtitle.textContent = "Create a new account to join!";
+                    nameGroup.classList.remove('hidden');
+                    phoneGroup.classList.remove('hidden');
+                    authSubmitBtn.textContent = 'Sign Up';
+                    authToggleTexts.forEach(t => t.textContent = "Already have an account?");
+                    authToggleBtns.forEach(b => b.textContent = "Log In");
+                } else {
+                    authSubtitle.textContent = "Chat, Connect and Find what's yours!";
+                    nameGroup.classList.add('hidden');
+                    phoneGroup.classList.add('hidden');
+                    authSubmitBtn.textContent = 'Log In';
+                    authToggleTexts.forEach(t => t.textContent = "Don't have an account?");
+                    authToggleBtns.forEach(b => b.textContent = "Sign Up");
+                }
+            });
         });
 
         loginForm?.addEventListener('submit', async (e) => {
@@ -349,8 +351,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         nameGroup.classList.add('hidden');
                         phoneGroup.classList.add('hidden');
                         authSubmitBtn.textContent = 'Log In';
-                        authToggleText.textContent = "Don't have an account?";
-                        authToggleBtn.textContent = "Sign Up";
+                        authToggleTexts.forEach(t => t.textContent = "Don't have an account?");
+                        authToggleBtns.forEach(b => b.textContent = "Sign Up");
                     } else {
                         const user = data.user || data;
                         if (user) {

@@ -106,9 +106,9 @@
                 <!-- Actual Login Form (Visible by default) -->
                 <form id="login-form" class="mt-6">
                     <div class="mt-2 text-sm text-dimmed text-center mb-6">
-                        <span id="auth-toggle-text">Don't have an account?</span>
-                        <a href="#" id="auth-toggle-btn"
-                            style="color:var(--accent-primary); font-weight:bold; text-decoration:none;">Sign Up</a>
+                        <span class="auth-toggle-text">Don't have an account?</span>
+                        <a href="#" class="auth-toggle-btn"
+                            style="color:var(--accent-primary); font-weight:bold; text-decoration:none; padding: 10px; display: inline-block;">Sign Up</a>
                     </div>
                     <div class="input-group hidden" id="name-group">
                         <i class="ph ph-user"></i>
@@ -126,18 +126,19 @@
                         <i class="ph ph-lock-key"></i>
                         <input type="password" id="password" placeholder="Password" required value="password123">
                     </div>
+                    <p class="text-xs text-dimmed text-center mb-4" style="opacity: 0.7;">Note: Password must be at least 6 characters</p>
                     <button type="submit" class="primary-btn w-full" id="auth-submit-btn">Continue</button>
                     <button type="button" class="icon-btn w-full mt-4 text-sm hidden" id="back-to-dashboard"
                         style="font-size:0.9rem; gap:8px;">
                         <i class="ph ph-arrow-left"></i> Back to Dashboard
                     </button>
                 </form>
-                <div class="mt-12 pt-6 border-top border-white/5 text-center" style="margin-top: 3.5rem;">
+                <div class="mt-10 pt-6 border-top border-white/5 text-center" style="margin-top: 4rem;">
                     <div class="flex justify-center gap-6 text-xs text-dimmed">
-                        <a href="#" style="color:var(--text-muted); text-decoration:none; padding: 8px;">Privacy Policy</a>
-                        <a href="#" style="color:var(--text-muted); text-decoration:none; padding: 8px;">Terms of Service</a>
+                        <a href="#" style="color:var(--text-muted); text-decoration:none; padding: 10px;">Privacy Policy</a>
+                        <a href="#" style="color:var(--text-muted); text-decoration:none; padding: 10px;">Terms of Service</a>
                     </div>
-                    <p class="mt-6 text-xs text-dimmed" style="opacity: 0.5;">© 2026 UNIBUZZ World. Built for Students. 🚀</p>
+                    <p class="mt-4 text-xs text-dimmed" style="opacity: 0.4;">© 2026 UNIBUZZ World. Built for Students. 🚀</p>
                 </div>
             </div>
         </div> <!-- End Wrapper -->
