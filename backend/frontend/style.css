@@ -1181,20 +1181,31 @@ textarea:focus {
 
     .main-nav {
         width: 100%;
-        height: calc(65px + env(safe-area-inset-bottom));
+        height: calc(70px + env(safe-area-inset-bottom));
         flex-direction: row;
-        justify-content: space-around;
-        padding: 0 10px env(safe-area-inset-bottom);
+        justify-content: flex-start; /* Enable swiping icons */
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0 15px env(safe-area-inset-bottom);
         order: 2; /* Bottom */
         border-right: none;
         border-top: 1px solid var(--border-color);
         background: var(--bg-panel);
+        -webkit-overflow-scrolling: touch;
+        gap: 15px;
+    }
+
+    .main-nav::-webkit-scrollbar {
+        display: none; /* Hide scrollbar for clean look */
     }
 
     .nav-top, .nav-bottom {
         flex-direction: row;
         width: auto;
         height: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
     .nav-item {
@@ -1254,11 +1265,28 @@ textarea:focus {
 
     .chat-input-area {
         padding: 12px;
+        background: var(--bg-panel);
+        border-top: 1px solid var(--border-color);
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
     }
 
     /* Fix for iOS zoom and keyboard */
     input, textarea {
         font-size: 16px !important;
+    }
+
+    /* Login Screen Mobile Fixes */
+    .auth-card {
+        width: 95% !important;
+        padding: 1.5rem !important;
+    }
+
+    #auth-toggle-btn {
+        padding: 10px;
+        display: inline-block;
+        font-weight: bold;
     }
 }
 
