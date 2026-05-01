@@ -7,15 +7,7 @@ let currentUser = {
     role: 'student'
 };
 
-let users = {
-    'u1': { id: 'u1', name: 'Aryan Malhotra', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aryan', bio: 'Coding my way through life. 💻', isDummy: true },
-    'u2': { id: 'u2', name: 'Ishani Gupta', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ishani', bio: 'Coding my way through life. 💻', isDummy: true },
-    'u3': { id: 'u3', name: 'Aarav Sharma', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aarav', bio: 'Coffee, Code, and Cricket. 🏏', isDummy: true },
-    'u4': { id: 'u4', name: 'Ananya Iyer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ananya', bio: 'Design is my passion. ✨', isDummy: true },
-    'u5': { id: 'u5', name: 'Vikram Singh', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Vikram', bio: 'Always up for a trek. 🏔️', isDummy: true },
-    'u6': { id: 'u6', name: 'Sana Khan', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sana', bio: 'Photography enthusiast. 📸', isDummy: true },
-    'u7': { id: 'u7', name: 'Rahul Reddy', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul', bio: 'Startup dreamer. 🚀', isDummy: true }
-};
+let users = {};
 
 function getDisplayName(userId) {
     if (userId === 'system') return 'System';
