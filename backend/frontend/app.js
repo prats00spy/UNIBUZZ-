@@ -1403,9 +1403,15 @@ async function openChat(chat, listItemUi) {
             }));
             
             // Only re-render if data actually changed to avoid flickers
-            if (JSON.stringify(newMessages) !== JSON.stringify(chat.messages)) {
+            const hasChanged = JSON.stringify(newMessages) !== JSON.stringify(chat.messages);
+            if (hasChanged) {
                 chat.messages = newMessages;
-                renderMessages(chat);
+                // If the user is typing, we avoid a full re-render to save the keyboard
+                if (document.activeElement === messageInput) {
+                    newMessages.forEach(m => appendMessage(m, chat, false));
+                } else {
+                    renderMessages(chat);
+                }
             }
         }
 
@@ -1444,13 +1450,18 @@ async function openChat(chat, listItemUi) {
 }
 
 function renderMessages(chat) {
-    messagesContainer.innerHTML = '';
-
-    // Encryption Banner
-    const encryptionMsg = document.createElement('div');
-    encryptionMsg.className = 'encryption-lock';
-    encryptionMsg.innerHTML = '<i class="ph ph-lock-key"></i> Messages are end-to-end encrypted. No one outside of this chat can read them.';
-    messagesContainer.appendChild(encryptionMsg);
+    // If we're already viewing this chat and just syncing, don't wipe everything
+    const existingMsgCount = messagesContainer.querySelectorAll('.message-wrapper').length;
+    
+    if (existingMsgCount === 0 || !chat.messages || chat.messages.length !== existingMsgCount) {
+        messagesContainer.innerHTML = '';
+        
+        // Encryption Banner
+        const encryptionMsg = document.createElement('div');
+        encryptionMsg.className = 'encryption-lock';
+        encryptionMsg.innerHTML = '<i class="ph ph-lock-key"></i> Messages are end-to-end encrypted. No one outside of this chat can read them.';
+        messagesContainer.appendChild(encryptionMsg);
+    }
 
     if (!chat.messages || chat.messages.length === 0) {
         const emptyDiv = document.createElement('div');
@@ -1461,7 +1472,7 @@ function renderMessages(chat) {
     }
 
     chat.messages.forEach(msg => {
-        appendMessage(msg, chat, false); // Don't scroll yet
+        appendMessage(msg, chat, false);
     });
 
     scrollToBottom();
@@ -1638,8 +1649,11 @@ async function sendMessage() {
     renderMessages(chat);
     scrollToBottom();
     
-    // Force focus back to input for mobile keyboard persistence
+    // Force focus back to input immediately for mobile keyboard persistence
     messageInput.focus();
+    // Re-focus after a tiny delay to catch any race conditions on mobile
+    setTimeout(() => messageInput.focus(), 10);
+    setTimeout(() => messageInput.focus(), 50);
     
     // Update sidebar snippet instantly
     if (currentTab === 'chats') renderChatsList();
