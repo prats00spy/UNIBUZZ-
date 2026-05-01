@@ -408,6 +408,14 @@ document.addEventListener('DOMContentLoaded', () => {
         messageInput?.addEventListener('input', handleMentions);
         messageInput?.addEventListener('click', () => mentionPopup.classList.add('hidden'));
 
+        // Mobile Back Buttons
+        document.getElementById('chat-back-btn')?.addEventListener('click', () => {
+            document.querySelector('.app-layout').classList.remove('viewing-chat');
+        });
+        document.getElementById('lf-back-btn')?.addEventListener('click', () => {
+            document.querySelector('.app-layout').classList.remove('viewing-chat');
+        });
+
         // Navigation Tabs (Listeners only)
         document.querySelectorAll('.nav-top .nav-item[data-tab]').forEach(item => {
             item.addEventListener('click', () => switchTab(item.getAttribute('data-tab')));
@@ -898,6 +906,7 @@ function switchTab(tabId) {
     currentTab = tabId;
     activeChatId = null;
     activeLFId = null;
+    document.querySelector('.app-layout').classList.remove('viewing-chat');
 
     // Update Nav UI
     const navItemsUI = document.querySelectorAll('.nav-top .nav-item[data-tab]');
@@ -1169,6 +1178,7 @@ function renderLFList() {
 async function openChat(chat, listItemUi) {
     activeChatId = chat.id;
     activeLFId = null;
+    document.querySelector('.app-layout').classList.add('viewing-chat');
 
     document.querySelectorAll('.list-item').forEach(el => el.classList.remove('selected'));
     if (listItemUi) listItemUi.classList.add('selected');
@@ -1633,6 +1643,7 @@ function populateGroupInfo() {
 function openLFItem(item) {
     activeLFId = item.id;
     activeChatId = null;
+    document.querySelector('.app-layout').classList.add('viewing-chat');
     const isAuthor = item.author === currentUser.id;
 
     chatView.classList.add('hidden');
