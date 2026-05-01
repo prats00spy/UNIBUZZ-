@@ -1658,4 +1658,8 @@ textarea:focus {
     background: var(--bg-panel);
     padding: 15px 20px;
     border-top: 1px solid var(--border-color);
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px;
 }
