@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     /* Gen Z Midnight Neon Theme */
     --bg-main: #050505;
     --bg-panel: #0f0f12;
@@ -1324,6 +1324,10 @@ textarea:focus {
         border-top: 1px solid var(--border-color);
         position: relative;
         z-index: 100;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px;
     }
 
     .group-info-sidebar {
