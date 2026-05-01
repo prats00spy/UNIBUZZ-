@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     /* Gen Z Midnight Neon Theme */
     --bg-main: #050505;
     --bg-panel: #0f0f12;
@@ -1178,9 +1178,13 @@ textarea:focus {
     margin-bottom: 1rem;
 }
 
-/* Hide mobile back buttons by default */
+/* Ensure back buttons are visible when in a chat */
 .mobile-back-btn {
-    display: none !important;
+    display: flex !important;
+    padding: 10px;
+    margin-right: 10px;
+    font-size: 1.4rem;
+    color: var(--accent-primary);
 }
 
 /* --- RESPONSIVENESS (Mobile Support) --- */
@@ -1629,32 +1633,29 @@ textarea:focus {
     display: flex;
     height: 100%;
 }
-#empty-state.view-state {
-    justify-content: center;
-    align-items: center;
+
+@keyframes animate-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
- @ k e y f r a m e s   a n i m a t e - s p i n   { 
-         f r o m   {   t r a n s f o r m :   r o t a t e ( 0 d e g ) ;   } 
-         t o   {   t r a n s f o r m :   r o t a t e ( 3 6 0 d e g ) ;   } 
- } 
- . a n i m a t e - s p i n   { 
-         a n i m a t i o n :   a n i m a t e - s p i n   1 s   l i n e a r   i n f i n i t e ; 
-         d i s p l a y :   i n l i n e - b l o c k ; 
- }  
- 
- / *   W h i t e   I n p u t   A r e a   * / 
- # m e s s a g e - i n p u t   { 
-         b a c k g r o u n d :   # f f f f f f   ! i m p o r t a n t ; 
-         c o l o r :   # 0 0 0 0 0 0   ! i m p o r t a n t ; 
-         b o r d e r :   1 p x   s o l i d   r g b a ( 0 , 0 , 0 , 0 . 1 )   ! i m p o r t a n t ; 
-         f o n t - w e i g h t :   5 0 0   ! i m p o r t a n t ; 
- } 
- # m e s s a g e - i n p u t : : p l a c e h o l d e r   { 
-         c o l o r :   # 6 6 6 6 6 6   ! i m p o r t a n t ; 
- } 
- . c h a t - i n p u t - a r e a   { 
-         b a c k g r o u n d :   v a r ( - - b g - p a n e l ) ; 
-         p a d d i n g :   1 5 p x   2 0 p x ; 
-         b o r d e r - t o p :   1 p x   s o l i d   v a r ( - - b o r d e r - c o l o r ) ; 
- }  
- 
+.animate-spin {
+    animation: animate-spin 1s linear infinite;
+    display: inline-block;
+}
+
+/* White Input Area */
+#message-input {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+    font-weight: 500 !important;
+    font-size: 16px !important;
+}
+#message-input::placeholder {
+    color: #666666 !important;
+}
+.chat-input-area {
+    background: var(--bg-panel);
+    padding: 15px 20px;
+    border-top: 1px solid var(--border-color);
+}

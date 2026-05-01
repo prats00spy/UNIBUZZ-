@@ -466,12 +466,18 @@ document.addEventListener('DOMContentLoaded', () => {
         messageInput?.addEventListener('input', handleMentions);
         messageInput?.addEventListener('click', () => mentionPopup.classList.add('hidden'));
 
-        // Mobile Back Buttons
+        // Mobile & Desktop Back Buttons
         document.getElementById('chat-back-btn')?.addEventListener('click', () => {
             document.querySelector('.app-layout').classList.remove('viewing-chat');
-            // Also hide sidebars if they were open on mobile
+            chatView.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            document.querySelectorAll('.list-item').forEach(el => el.classList.remove('selected'));
+            
+            // Also hide sidebars if they were open
             groupInfoSidebar.classList.add('hidden');
             profileSidebar.classList.add('hidden');
+            
+            activeChatId = null;
         });
         document.getElementById('lf-back-btn')?.addEventListener('click', () => {
             document.querySelector('.app-layout').classList.remove('viewing-chat');
