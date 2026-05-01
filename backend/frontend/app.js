@@ -194,11 +194,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 await syncUserProfile();
             } else {
                 const saved = localStorage.getItem('unibuzz_session');
-                if (saved) {
+                const returnToDashboard = sessionStorage.getItem('return_to_dashboard');
+
+                if (saved && !returnToDashboard) {
                     Object.assign(currentUser, JSON.parse(saved));
                     isAuthenticated = true;
-                } else if (lastUser) {
-                    // Show "Continue as" dashboard of signing in
+                } else if (lastUser && !returnToDashboard) {
+                    // Show "Continue as" dashboard
                     const card = document.getElementById('continue-card');
                     if (card) {
                         card.classList.remove('hidden');
@@ -211,6 +213,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             document.getElementById('password').focus();
                         };
                     }
+                } else {
+                    // Show main login dashboard
+                    if (loginDashboard) loginDashboard.classList.remove('hidden');
+                    if (loginForm) loginForm.classList.add('hidden');
+                    sessionStorage.removeItem('return_to_dashboard');
                 }
             }
             // Auto-login to dashboard if session exists
@@ -351,18 +358,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         authToggleTexts.forEach(t => t.textContent = "Don't have an account?");
                         authToggleBtns.forEach(b => b.textContent = "Sign Up");
                     } else {
+                    if (session) {
+                        if (window.supabaseClient) {
+                            await window.supabaseClient.auth.setSession({
+                                access_token: session.access_token,
+                                refresh_token: session.refresh_token
+                            });
+                        }
+                        
                         if (user) {
                             currentUser.id = user.id;
                             currentUser.email = user.email || email;
                             currentUser.name = user.user_metadata?.full_name || result.fullName || email.split('@')[0];
                             currentUser.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=random`;
                             localStorage.setItem('unibuzz_session', JSON.stringify(currentUser));
+                            localStorage.setItem('last_user', JSON.stringify({ name: currentUser.name, avatar: currentUser.avatar, email: currentUser.email }));
                         }
                         
                         await syncUserProfile();
                         loginScreen.classList.add('hidden');
                         appScreen.classList.remove('hidden');
                         initApp();
+                    }
                     }
                 } else {
                     // Fallback to direct Supabase if backend fails or is not available
@@ -1565,12 +1582,14 @@ window.archiveChat = function () {
 
 window.logout = function () {
     if (confirm("Logout from UNIBUZZ? 🥺")) {
-        // Keep last_user for "Continue As" functionality
-        const lastUser = { name: currentUser.name, avatar: currentUser.avatar, email: currentUser.email };
-        localStorage.setItem('last_user', JSON.stringify(lastUser));
-
+        // Clear everything for a clean logout
         localStorage.removeItem('unibuzz_session');
+        // We keep last_user for the "Continue as" feature, 
+        // but let's ensure we return to the login dashboard
         if (window.supabaseClient) window.supabaseClient.auth.signOut();
+        
+        // Force back to login dashboard on next load
+        sessionStorage.setItem('return_to_dashboard', 'true');
         location.reload();
     }
 };
