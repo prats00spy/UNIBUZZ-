@@ -308,6 +308,13 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const email = emailInput.value.trim();
             const password = passwordInput.value;
+
+            if (password.length < 6) {
+                alert("Security Rule: Password must be at least 6 characters long!");
+                authSubmitBtn.disabled = false;
+                return;
+            }
+
             authSubmitBtn.disabled = true;
 
             try {
