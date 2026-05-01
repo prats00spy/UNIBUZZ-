@@ -750,13 +750,26 @@ async function syncUserProfile() {
             email: currentUser.email || '',
             updated_at: new Date()
         };
-        // Only add bio/phone if they are defined to avoid potential schema errors
         if (currentUser.bio) profileData.bio = currentUser.bio;
         if (currentUser.phone) profileData.phone = currentUser.phone;
 
-        if (window.supabaseClient) {
-            const { error } = await window.supabaseClient.from('profiles').upsert(profileData);
-            if (error) console.warn("Profile Sync Warning:", error);
+        // Use the backend proxy for profile sync to ensure it works even if frontend session is pending
+        const BACKEND_URL = window.location.origin;
+        const response = await fetch(`${BACKEND_URL}/api/sync-profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ profileData })
+        });
+        
+        if (!response.ok) {
+            const errData = await response.json();
+            console.warn("Profile Sync via Backend Warning:", errData.error);
+            
+            // Fallback to direct Supabase if backend fails
+            if (window.supabaseClient) {
+                const { error } = await window.supabaseClient.from('profiles').upsert(profileData);
+                if (error) console.warn("Direct Profile Sync Fallback Warning:", error);
+            }
         }
     } catch (err) {
         console.error("Critical Profile Sync Error:", err);
