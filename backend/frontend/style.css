@@ -1158,10 +1158,16 @@ textarea:focus {
     margin-bottom: 1rem;
 }
 
+/* Hide mobile back buttons by default */
+.mobile-back-btn {
+    display: none !important;
+}
+
 /* --- RESPONSIVENESS (Mobile Support) --- */
 @media (max-width: 768px) {
     body {
-        height: 100dvh; /* Dynamic viewport height for mobile browsers */
+        height: 100dvh;
+        overflow: hidden;
     }
 
     .app-layout {
@@ -1170,6 +1176,7 @@ textarea:focus {
         border-radius: 0;
         flex-direction: column;
         margin: 0;
+        display: flex;
     }
 
     .main-nav {
@@ -1178,9 +1185,10 @@ textarea:focus {
         flex-direction: row;
         justify-content: space-around;
         padding: 0 10px env(safe-area-inset-bottom);
-        order: 2; /* Nav at the bottom */
+        order: 2; /* Bottom */
         border-right: none;
         border-top: 1px solid var(--border-color);
+        background: var(--bg-panel);
     }
 
     .nav-top, .nav-bottom {
@@ -1190,10 +1198,10 @@ textarea:focus {
     }
 
     .nav-item {
-        width: 50px;
+        width: 60px;
         height: 100%;
         border-bottom: none;
-        font-size: 1.4rem;
+        font-size: 1.6rem;
     }
 
     .nav-separator {
@@ -1202,48 +1210,25 @@ textarea:focus {
 
     .side-panel {
         width: 100% !important;
-        height: calc(100% - 65px);
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 5;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        flex: 1;
         display: flex !important;
+        border-right: none;
     }
 
     .main-view {
         width: 100% !important;
-        height: calc(100% - 65px);
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 10;
-        transform: translateX(100%);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        flex: 1;
+        display: none !important; /* Hidden by default on mobile */
         background: var(--bg-main);
+    }
+
+    /* State management */
+    .app-layout.viewing-chat .main-view {
         display: flex !important;
     }
 
-    /* State management for sliding view */
-    .app-layout.viewing-chat .main-view {
-        transform: translateX(0);
-    }
-
     .app-layout.viewing-chat .side-panel {
-        transform: translateX(-100%);
-    }
-
-    .panel-header {
-        padding: 1.5rem 1rem 0.5rem;
-    }
-
-    .search-bar {
-        padding: 0.5rem 1rem;
-    }
-
-    .list-item {
-        margin: 4px 8px;
-        padding: 0.8rem 1rem;
+        display: none !important;
     }
 
     .chat-header {
@@ -1251,47 +1236,29 @@ textarea:focus {
         padding: env(safe-area-inset-top) 1rem 0;
     }
 
-    .chat-actions .icon-btn:not(#group-info-btn):not(.dropdown-trigger) {
-        display: none; /* Hide non-essential actions on mobile header */
-    }
-
-    .messages-area {
-        padding: 1rem;
-        gap: 0.75rem;
-    }
-
-    .message-wrapper {
-        max-width: 90%;
-    }
-
-    .chat-input-area {
-        height: auto;
-        padding: 10px;
-        gap: 8px;
-    }
-
-    .message-input-wrapper input {
-        padding: 10px 15px;
-        font-size: 16px; /* Prevent iOS zoom on focus */
-    }
-
     .mobile-back-btn {
         display: flex !important;
     }
 
     .premium-title {
-        font-size: 2.5rem;
+        font-size: 2.2rem;
     }
 
-    /* Sidebars (Profile/Group Info) on Mobile */
-    .group-info-sidebar {
-        width: 100% !important;
-        z-index: 200;
+    .messages-area {
+        padding: 1rem;
     }
 
-    /* Fix for iOS momentum scrolling */
-    .scrollable {
-        -webkit-overflow-scrolling: touch;
+    .message-wrapper {
+        max-width: 92%;
+    }
+
+    .chat-input-area {
+        padding: 12px;
+    }
+
+    /* Fix for iOS zoom and keyboard */
+    input, textarea {
+        font-size: 16px !important;
     }
 }
 
