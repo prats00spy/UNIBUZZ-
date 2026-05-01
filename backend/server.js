@@ -89,6 +89,27 @@ app.post('/api/sync-profile', async (req, res) => {
     }
 });
 
+app.post('/api/send-message', async (req, res) => {
+    const { messageData } = req.body;
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/messages`, {
+            method: 'POST',
+            headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`, // Using backend key to ensure delivery
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(messageData)
+        });
+        const data = await response.json();
+        if (!response.ok) return res.status(400).json({ error: data.message || 'Message send failed' });
+        res.status(201).json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Endpoint to log a user login
 app.post('/api/log-login', (req, res) => {
     const { userId, email, timestamp } = req.body;

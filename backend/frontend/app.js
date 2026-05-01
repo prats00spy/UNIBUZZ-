@@ -1660,23 +1660,24 @@ async function sendMessage() {
     else if (currentTab === 'groups') renderGroupsList();
     else if (currentTab === 'communities') renderCommunitiesList();
 
-    if (window.supabaseClient) {
-        const payload = {
-            chat_id: activeChatId,
-            sender_id: currentUser.id,
-            text: text
-        };
+    try {
+        const BACKEND_URL = window.location.origin;
+        const response = await fetch(`${BACKEND_URL}/api/send-message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                messageData: {
+                    chat_id: activeChatId,
+                    sender_id: currentUser.id,
+                    text: text
+                }
+            })
+        });
 
-        const { data, error } = await window.supabaseClient.from('messages').insert([payload]).select();
+        const data = await response.json();
 
-        if (error) {
-            console.error("Error sending message:", error);
-            // Remove optimistic message on error
-            chat.messages = chat.messages.filter(m => m.id !== tempId);
-            renderMessages(chat);
-            alert("Failed to send: " + error.message);
-        } else if (data && data[0]) {
-            // Replace optimistic message with real one from DB (to get real ID/timestamp)
+        if (response.ok && data && data[0]) {
+            // Replace optimistic message with real one from DB
             const realMsg = {
                 id: data[0].id,
                 senderId: data[0].sender_id,
@@ -1686,12 +1687,15 @@ async function sendMessage() {
             const idx = chat.messages.findIndex(m => m.id === tempId);
             if (idx !== -1) chat.messages[idx] = realMsg;
             renderMessages(chat);
+        } else {
+            throw new Error(data.error || "Failed to sync message");
         }
-    } else {
-        // Mock logic already handled by optimistic update, just finalize it
-        const idx = chat.messages.findIndex(m => m.id === tempId);
-        if (idx !== -1) chat.messages[idx].isOptimistic = false;
+    } catch (err) {
+        console.error("Failed to send message:", err);
+        // Remove optimistic message on error
+        chat.messages = chat.messages.filter(m => m.id !== tempId);
         renderMessages(chat);
+        alert("Failed to send: " + err.message);
     }
 }
 

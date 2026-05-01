@@ -1318,16 +1318,26 @@ textarea:focus {
     }
 
     .chat-input-area {
+        position: fixed !important;
+        bottom: 0;
+        left: 0;
+        width: 100%;
         padding: 12px 16px;
         padding-bottom: calc(12px + env(safe-area-inset-bottom));
         background: var(--bg-panel);
         border-top: 1px solid var(--border-color);
-        position: relative;
-        z-index: 100;
+        z-index: 1000;
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
         gap: 8px;
+    }
+
+    .messages-area {
+        height: calc(100dvh - 130px) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important; /* Enable smooth scrolling on iOS */
+        padding-bottom: 80px !important; /* Space for fixed input */
     }
 
     .group-info-sidebar {
